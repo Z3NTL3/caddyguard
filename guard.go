@@ -27,7 +27,7 @@ var (
 	_ caddyfile.Unmarshaler = (*Guard)(nil)
 )
 
-// The Guard type
+// Guard is an elegant plugin for Caddy. It provides IP reputation scan. Acting as a middleware between your web server.
 type Guard struct {
 	Timeout time.Duration	`json:"timeout,omitempty"` // If it takes longer up until timeout, will notify the web server (only) for failure with the reason
 	IPHeaders []string `json:"ip_headers,omitempty"` // IP headers to lookup in to find the real ip, usefull for CDN based websites. Like Cloudflare's ``cf-connecting-ip``
