@@ -72,6 +72,9 @@ func (g *Guard) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp
 		return next.ServeHTTP(w,r)
 	} 
 
+	g.logger.Sugar().Infof("[GUARD-SCAN-START]: %s", lookupInHeader)
+	defer g.logger.Sugar().Infof("[GUARD-SCAN-END]: %s", lookupInHeader)
+
 	err := g.Rate(lookupInHeader)
 
 	r.Header.Add("X-Guard-Info", "Scanned IP for reputation using InternetDB")
@@ -86,7 +89,6 @@ func (g *Guard) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp
 			break // exit switch - to skip statements below
 		} 
 
-		
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(403)
 		
@@ -127,6 +129,7 @@ func (g *Guard) setup_client() error {
 	if g.Rotating_Proxy != "" {
 		proxyURI, err := url.Parse(g.Rotating_Proxy)
 		if err != nil {
+			g.logger.Error(err.Error())
 			return err
 		}
 
@@ -138,7 +141,15 @@ func (g *Guard) setup_client() error {
 	return nil
 }
 
-func (bot *Guard) Rate(ipaddr string) error {
+func (g *Guard) Rate(ipaddr string) error {
+	var err error
+	
+	defer func(){
+		if err != nil {
+			g.logger.Error(err.Error())
+		}
+	}()
+
 	req, err :=  http.NewRequest(
 		http.MethodGet, 
 		InternetDB + ipaddr, 
@@ -151,7 +162,7 @@ func (bot *Guard) Rate(ipaddr string) error {
 
 	setup_headers(req)
 
-	res, err := bot.Client.Do(req)
+	res, err := g.Client.Do(req)
 	if err != nil {
 		return err
 	}
