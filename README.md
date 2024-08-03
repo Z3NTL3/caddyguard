@@ -12,7 +12,7 @@
 </div>
 
 ## Intro
---- **Guard** is an elegant plugin for Caddy. It provides IP reputation scan. Acting as a middleware between your web server.
+--- **Guard** is an elegant IPQS plugin for Caddy. Acting as a middleware between your web server.
 
 --- **Features** are built in, you can tell Guard to intercept or to pass data to your web server.
 
