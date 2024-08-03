@@ -1,0 +1,17 @@
+{
+	order guard before respond
+}
+
+:2000 {
+	guard /apwqei qwe {
+		rotating_proxy 1.1.1.1
+		timeout 3s
+		ip_headers cf-connecting-ip {
+			more1
+			more2
+			more3
+		}
+		pass_thru 
+	}
+	respond  "ok"
+}

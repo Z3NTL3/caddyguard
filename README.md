@@ -21,14 +21,38 @@
 ### Caddyfile syntax
 ```
 guard [matcher] {
-    rotating_proxy 1.1.1.1 # not required
-    timeout 3s
-    ip_headers cf-connecting-ip {
-        more1
-        more2
-        more3
+    rotating_proxy <arg>
+    timeout <arg>
+    ip_headers <args...> {
+        <arg> 
+        <arg>
+        <arg>
+        ...
     }
-    pass_thru # not required
+    pass_thru 
 }
 ```
 > You need to order manually.
+
+
+### Example
+```caddy
+{
+	order guard before reverse_proxy
+}
+
+:2000 {
+	guard /api {
+		rotating_proxy 1.1.1.1
+		timeout 3s
+		ip_headers cf-connecting-ip {
+			more1
+			more2
+			more3
+		}
+		pass_thru 
+	}
+
+	reverse_proxy  http://localhost:2000
+}
+```
