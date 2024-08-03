@@ -19,7 +19,7 @@
 
 
 ### Caddyfile syntax
-```
+```caddy
 guard [matcher] {
     rotating_proxy <arg>
     timeout <arg>
@@ -32,8 +32,35 @@ guard [matcher] {
     pass_thru 
 }
 ```
-> You need to order manually.
+> Keep in mind that you need to order manually.
 
+**If** ``pass_thru`` is provided, then there are some important headers your web server should consume:
+
+#### X-Guard-* Headers
+  - ``X-Guard-Success`` 
+    > If it is set to ``1``, it means success otherwise ``-1`` means false.
+  - ``X-Guard-Info``
+    > Contains explainatory description.
+  - ``X-Guard-Query``
+    > The IP which got queried. Not present when ``X-Guard-Rate`` is ``UNKNOWN``.
+  - ``X-Guard-Rate`` 
+    > Either ``DANGER | LEGIT | UNKNOWN``
+    > 
+    > **DANGER**<br>
+    > Reports that the IP reputation is bad
+    >
+    > **LEGIT**<br>
+    > Reports that the IP reputation is good
+    >
+    > **LEGIT**<br>
+    > Reports that the IP reputation is unknown, aka scan failure. Typically exceeded ``timeout`` constraints.
+
+
+### Additional notes
+Guard uses **InternetDB** to perform scans. It's completely free, and allows high traffic throughput. You can always use ``rotating_proxy`` sub-directive with Guard to increase that when needed.
+
+Determination of a bad IP happens in the following way:
+ - If **InternetDB** knows anything about the queried IP, then it is an IP with bad reputation.
 
 ### Example
 ```caddy
@@ -43,8 +70,8 @@ guard [matcher] {
 
 :2000 {
 	guard /api {
-		rotating_proxy 1.1.1.1
-		timeout 3s
+		rotating_proxy 1.1.1.1 
+		timeout 3s 
 		ip_headers cf-connecting-ip {
 			more1
 			more2
@@ -56,3 +83,6 @@ guard [matcher] {
 	reverse_proxy  http://localhost:2000
 }
 ```
+
+### Credits
+--- Programmed by z3ntl3, will be used at the revamped ``api.pix4.dev``.

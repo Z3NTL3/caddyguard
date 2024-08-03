@@ -29,10 +29,10 @@ var (
 
 // Guard is an elegant IP reputation plugin for Caddy.
 type Guard struct {
-	Timeout time.Duration	`json:"timeout,omitempty"` // If it takes longer up until timeout, will notify the web server (only) for failure with the reason
-	IPHeaders []string `json:"ip_headers,omitempty"` // IP headers to lookup in to find the real ip, usefull for CDN based websites. Like Cloudflare's ``cf-connecting-ip``
+	Timeout time.Duration	`json:"timeout,omitempty"` // If it takes longer up until timeout, will notify the web server (only) for failure with the reason, even if pass_thru is active
+	IPHeaders []string `json:"ip_headers,omitempty"` // IP headers to look into to find the real ip, usefull for CDN based websites. Like Cloudflare's ``cf-connecting-ip``
 	Rotating_Proxy string `json:"rotating_proxy,omitempty"` // Tells the client to use a rotating proxy when connecting to internetdb.shodan.io
-	PassThrough bool `json:"pass_thru,omitempty"` // Tells whether the guard middleware to intercept strictly or to pass data through to the web server about the client's IP reputation, usually passes down some info headers by manipulating the request headers
+	PassThrough bool `json:"pass_thru,omitempty"` // Tells whether the guard middleware should intercept strictly or pass data to the next handler, typically your web server. It does that by manipulating request headers in the form of X-Guard-* 
 	logger *zap.Logger
 	*http.Client
 }
