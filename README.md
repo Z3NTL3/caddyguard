@@ -16,7 +16,7 @@
 ## Intro
 --- **Guard** is an elegant IPQS plugin for Caddy. Acting as a middleware between your web server.
 
---- **Features** are built in, you can tell Guard to intercept or to pass data to your web server.
+--- **Features** are built in, you can tell Guard to intercept or pass data all the way down to your web server.
 
 ### Install
 ```
