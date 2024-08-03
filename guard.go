@@ -89,7 +89,7 @@ func (g *Guard) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp
 		w.WriteHeader(403)
 		w.Header().Add("Content-Type","text/html; charset=utf-8")
 		w.Write([]byte(fmt.Sprintf(
-			"You were not given authority for the fact that your IP has a bad reputation.",
+			"<h2>You seem to use a VPN/Proxy, please turn it off to proceed.</h2>",
 		)))
 
 		return ErrBadIP
@@ -104,7 +104,6 @@ func (g *Guard) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp
 		}
 	}
 
-	fmt.Printf("HEADERS: %+v\n", r.Header)
 	return next.ServeHTTP(w,r)
 }
 
