@@ -30,7 +30,7 @@ xcaddy build --with github.com/z3ntl3/caddyguard
 }
 
 :2000 {
-	guard /api {
+	guard /api* {
 		rotating_proxy 1.1.1.1 
 		timeout 3s 
 		ip_headers cf-connecting-ip {
