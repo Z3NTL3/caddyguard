@@ -86,8 +86,10 @@ func (g *Guard) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp
 			break // exit switch - to skip statements below
 		} 
 
+		
+		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(403)
-		w.Header().Add("Content-Type","text/html; charset=utf-8")
+		
 		w.Write([]byte(fmt.Sprintf(
 			"<h2>You seem to use a VPN/Proxy, please turn it off to proceed.</h2>",
 		)))
@@ -97,10 +99,15 @@ func (g *Guard) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp
 		r.Header.Add("X-Guard-Success", "1")
 		r.Header.Add("X-Guard-Rate", "LEGIT")
 	default:
-		if err, ok := err.(net.Error); ok && err.Timeout() && err != ErrBadIP {
-			r.Header.Add("X-Guard-Success", "-1")
+		r.Header.Add("X-Guard-Success", "-1")
+		r.Header.Add("X-Guard-Rate", "UNKNOWN")
+
+		err, netErr := err.(net.Error); if netErr && err.Timeout() {
 			r.Header.Set("X-Guard-Info", "Client for InternetDB timed out")
-			r.Header.Add("X-Guard-Rate", "UNKNOWN")
+		}
+
+		if !netErr {
+			r.Header.Set("X-Guard-Info", err.Error())
 		}
 	}
 

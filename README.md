@@ -18,6 +18,11 @@
 
 --- **Features** are built in, you can tell Guard to intercept or to pass data to your web server.
 
+### Install
+```
+xcaddy build --with github.com/z3ntl3/caddyguard
+```
+
 ### Example
 ```caddy
 {

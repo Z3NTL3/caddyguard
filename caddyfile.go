@@ -30,7 +30,7 @@ func parseCaddyfile (h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error
 func (g *Guard) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	for d.Next() {		
 		if d.CountRemainingArgs() > 0 {
-			return d.Err("found more arguments than allowed")
+			return d.Err("found more arguments than it is allowed")
 		}
 
 		for nesting := d.Nesting(); d.NextBlock(nesting); {
