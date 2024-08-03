@@ -1,24 +1,27 @@
 package caddyguard
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/caddyserver/caddy/v2"
+	"github.com/caddyserver/caddy/v2/caddyconfig"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
+	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 )
 
 func init() {
 	caddy.RegisterModule(Guard{})
-	httpcaddyfile.RegisterDirective("guard", parseCaddyfile)
+	httpcaddyfile.RegisterHandlerDirective("guard", parseCaddyfile)
 }
 
 // Parse caddy file tokens
-func parseCaddyfile(h httpcaddyfile.Helper) ([]httpcaddyfile.ConfigValue, error) {
+func parseCaddyfile (h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error) {
 	var g Guard
 	err := (&g).UnmarshalCaddyfile(h.Dispenser)
 
-	return h.NewRoute(caddy.ModuleMap{}, &g), err
+	return &g, err
 }
 
 // Parses Caddyfile syntax of Guard module.
@@ -27,11 +30,7 @@ func parseCaddyfile(h httpcaddyfile.Helper) ([]httpcaddyfile.ConfigValue, error)
 //
 //  Caddyfile-unmarshaled values will not be used directly; they will be encoded as JSON and then used from that
 func (g *Guard) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
-	for d.Next() {
-		if d.NextArg() {
-			g.Path = d.Val()
-		}
-		
+	for d.Next() {		
 		if d.CountRemainingArgs() > 0 {
 			return d.Err("found more arguments than allowed")
 		}
@@ -81,5 +80,6 @@ func (g *Guard) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 		}
 	}
 
+	fmt.Println(string(caddyconfig.JSON(g,nil)))
 	return nil
 }

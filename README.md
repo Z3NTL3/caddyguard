@@ -20,17 +20,15 @@
 
 ### Caddyfile syntax
 ```
-guard {
-    rotating_proxy "1.1.1.1""
+guard [matcher] {
+    rotating_proxy 1.1.1.1 # not required
     timeout 3s
     ip_headers cf-connecting-ip {
         more1
         more2
         more3
     }
-    pass_thru 
+    pass_thru # not required
 }
 ```
 > You need to order manually.
-
-> **UNDER DEVELOPMENT** open for ALPHA testing.

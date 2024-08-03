@@ -32,7 +32,6 @@ type Guard struct {
 	Timeout time.Duration	`json:"timeout,omitempty"` // If it takes longer up until timeout, will notify the web server (only) for failure with the reason
 	IPHeaders []string `json:"ip_headers,omitempty"` // IP headers to lookup in to find the real ip, usefull for CDN based websites. Like Cloudflare's ``cf-connecting-ip``
 	Rotating_Proxy string `json:"rotating_proxy,omitempty"` // Tells the client to use a rotating proxy when connecting to internetdb.shodan.io
-	Path string  `json:"path,omitempty"` // Subject to change, untouched
 	PassThrough bool `json:"pass_thru,omitempty"` // Tells whether the guard middleware to intercept strictly or to pass data through to the web server about the client's IP reputation, usually passes down some info headers by manipulating the request headers
 	logger *zap.Logger
 	*http.Client
