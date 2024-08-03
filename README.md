@@ -16,7 +16,27 @@
 
 --- **Features** are built in, you can tell Guard to intercept or to pass data to your web server.
 
+### Example
+```caddy
+{
+	order guard before reverse_proxy
+}
 
+:2000 {
+	guard /api {
+		rotating_proxy 1.1.1.1 
+		timeout 3s 
+		ip_headers cf-connecting-ip {
+			more1
+			more2
+			more3
+		}
+		pass_thru 
+	}
+
+	reverse_proxy  http://localhost:2000
+}
+```
 
 ### Caddyfile syntax
 ```caddy
@@ -62,27 +82,6 @@ Guard uses **InternetDB** to perform scans. It's completely free, and allows hig
 Determination of a bad IP happens in the following way:
  - If **InternetDB** knows anything about the queried IP, then it is an IP with bad reputation.
 
-### Example
-```caddy
-{
-	order guard before reverse_proxy
-}
-
-:2000 {
-	guard /api {
-		rotating_proxy 1.1.1.1 
-		timeout 3s 
-		ip_headers cf-connecting-ip {
-			more1
-			more2
-			more3
-		}
-		pass_thru 
-	}
-
-	reverse_proxy  http://localhost:2000
-}
-```
 
 ### Credits
 --- Programmed by z3ntl3, will be used at the revamped ``api.pix4.dev``.
