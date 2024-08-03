@@ -9,6 +9,8 @@
                 <img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/z3ntl3/caddyguard">
         </div>
     </div>
+    <img alt="Static Badge" src="https://img.shields.io/badge/z3ntl3-white?style=flat&logo=aeromexico&logoSize=auto&label=Author">
+
 </div>
 
 ## Intro
