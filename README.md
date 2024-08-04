@@ -141,7 +141,7 @@ guard [matcher] {
     >     > **LEGIT**<br>
     >     > Reports that the IP reputation is good
     >     >
-    >     > **LEGIT**<br>
+    >     > **UNKNOWN**<br>
     >     > Reports that the IP reputation is unknown, aka scan failure. Typically exceeded ``timeout`` constraints.
 
 
