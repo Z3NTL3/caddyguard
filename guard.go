@@ -3,11 +3,9 @@ package caddyguard
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/caddyserver/caddy/v2"
@@ -167,14 +165,16 @@ func (g *Guard) Rate(ipaddr string) error {
 		return err
 	}
 
-	raw, err := io.ReadAll(res.Body)
-	if err != nil {
+	// have nothing to do with the body
+	if err = res.Body.Close(); err != nil {
 		return err
 	}
 
-	if !strings.Contains(string(raw), "{\"detail\":\"No information available\"}") {
+	// means InternetDB contains info about the queried address
+	// so it has bad reputation according to the logic of Guard
+	if res.StatusCode != http.StatusNotFound {
 		return ErrBadIP
-	}
+	} 
 
 	return nil
 }
