@@ -15,6 +15,7 @@ import (
 )
 
 const InternetDB = "https://internetdb.shodan.io/"
+const PLUGIN_NAME = "guard"
 
 var ErrBadIP = errors.New("bad ip reputation")
 

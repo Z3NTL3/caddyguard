@@ -12,6 +12,9 @@ import (
 func init() {
 	caddy.RegisterModule(Guard{})
 	httpcaddyfile.RegisterHandlerDirective("guard", parseCaddyfile)
+
+	// order "guard" before "reverse_proxy" dir in Caddyfile
+	httpcaddyfile.RegisterDirectiveOrder(PLUGIN_NAME, "before", "reverse_proxy")
 }
 
 // Parse caddy file tokens

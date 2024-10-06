@@ -14,9 +14,11 @@
 </div>
 
 ## Intro
---- **Guard** is an elegant IPQS plugin for Caddy. Acting as a middleware between your web server.
+--- **Guard** is an elegant IPQS plugin for Caddy. Acting as a middleware or microservice between your web server.
 
 --- **Features** are built in, you can tell Guard to intercept or pass data all the way down to your web server.
+
+--- **Questions?** feel free to ask by [contacting me](https://t.me/z3ntl3)! 
 
 ### Install
 ```
@@ -25,11 +27,10 @@ xcaddy build --with github.com/z3ntl3/caddyguard
 
 ### Example
 ```caddy
-{
-	order guard before reverse_proxy
-}
 
 :2000 {
+    # guard is ordered before "reverse_proxy"
+    # https://caddyserver.com/docs/caddyfile/directives#directive-order
 	guard /api* {
 		rotating_proxy 1.1.1.1 
 		timeout 3s 
@@ -44,7 +45,7 @@ xcaddy build --with github.com/z3ntl3/caddyguard
 	reverse_proxy  http://localhost:2000
 }
 ```
-> Keep in mind that you need to order manually.
+
 
 ### Caddyfile syntax
 ```caddy
@@ -121,7 +122,7 @@ guard [matcher] {
     > <br>
     > Accepts no args, and disallows opening a block. It acts like a turn on.
     >
-    > Providing ``pass_thru`` simply means to pass data down to the next handler, aka your web server/reverse proxy instead of writing a HTTP response itself. Provides useful data by manipulating the request headers, while it moves down to the next handlers.
+    > Providing ``pass_thru`` simply means to pass data down to the next handler, aka your web server/reverse proxy instead of writing a builtin HTTP response. Provides useful data by manipulating the request headers, while it moves down to the next tree of handler(s).
     > 
     > **If** ``pass_thru`` is provided, then there are some important headers your web server should consume:
     >
@@ -146,11 +147,11 @@ guard [matcher] {
 
 
 ### Additional notes
-Guard uses **InternetDB** to perform scans. It's completely free, and allows high traffic throughput. You can always use ``rotating_proxy`` sub-directive with Guard to increase that when needed.
+Guard uses **InternetDB** to perform scans. It's completely free, and allows high traffic throughput. You can always use ``rotating_proxy`` sub-directive with Guard to allow a limitless quota when needed.
 
-Determination of a bad IP happens in the following way:
- - If **InternetDB** knows anything about the queried IP, then it is an IP with bad reputation.
+Determination of a bad IP happens based on logic:
+ - If **InternetDB** has information regards the queried IoT device by IP, then consider it has a bad IP reputation.
 
 
 ### Credits
---- Programmed by z3ntl3, will be used at the revamped ``api.pix4.dev``.
+--- Programmed by [z3ntl3](https://z3ntl3.com)

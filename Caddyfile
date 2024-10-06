@@ -1,0 +1,10 @@
+:2000 {
+	guard {
+		timeout 3s
+		ip_headers {
+			cf-connecting-ip
+		}
+		pass_thru
+	}
+	reverse_proxy https://google.com 
+}
