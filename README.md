@@ -64,7 +64,6 @@ guard [matcher] {
 ### Sub-directives 
  - ``rotating_proxy <arg> ``
      > **Doc**
-     > - Should comfort [net.http](https://pkg.go.dev/net/http#Transport). 
      >
      > - Supported protocols are ``socks``, ``http`` and ``https``.
      > - If scheme is not provided, ``http`` is assumed.
