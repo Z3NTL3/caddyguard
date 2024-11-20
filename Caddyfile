@@ -1,10 +1,13 @@
+{
+	debug
+}
 :2000 {
 	guard {
-		timeout 3s
+		ttl 168h
+		timeout 300ms
 		ip_headers {
 			cf-connecting-ip
 		}
-		pass_thru
 	}
-	reverse_proxy https://google.com 
+	reverse_proxy https://google.com
 }

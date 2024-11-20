@@ -1,13 +1,12 @@
 package caddyguard
 
 import (
-	"errors"
+	"context"
 	"fmt"
-	"net"
 	"net/http"
-	"net/url"
 	"time"
 
+	"github.com/SimpaiX-net/ipqs"
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
@@ -17,8 +16,6 @@ import (
 const InternetDB = "https://internetdb.shodan.io/"
 const PLUGIN_NAME = "guard"
 
-var ErrBadIP = errors.New("bad ip reputation")
-
 // Safe guards
 var (
 	_ caddy.Module = (*Guard)(nil)
@@ -26,15 +23,25 @@ var (
 	_ caddyfile.Unmarshaler = (*Guard)(nil)
 )
 
+type mode = string
+
+const (
+	success mode = "success"
+	danger mode = "danger"
+	unknown mode = "unknown"
+)
 // Guard is an elegant IPQS plugin for Caddy.
-type Guard struct {
-	Timeout time.Duration	`json:"timeout,omitempty"` // If it takes longer up until timeout, will notify the web server (only) for failure with the reason, even if pass_thru is active
-	IPHeaders []string `json:"ip_headers,omitempty"` // IP headers to look into to find the real ip, usefull for CDN based websites. Like Cloudflare's ``cf-connecting-ip``
-	Rotating_Proxy string `json:"rotating_proxy,omitempty"` // Tells the client to use a rotating proxy when connecting to internetdb.shodan.io
-	PassThrough bool `json:"pass_thru,omitempty"` // Tells whether the guard middleware should intercept strictly or pass data to the next handler, typically your web server. It does that by manipulating request headers in the form of X-Guard-* 
+type Guard struct { 
+	TTL time.Duration 	  	`json:"ttl,omitempty"`
+	Timeout time.Duration  	`json:"timeout,omitempty"`
+	IPHeaders []string	   	`json:"ip_headers,omitempty"`
+	Proxy string 			`json:"rotating_proxy,omitempty"`
+	ctx context.Context
 	logger *zap.Logger
-	*http.Client
+	client *ipqs.Client
 }
+
+const ua = "Mozilla/5.0 (Linux; Android 13; SM-S901U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36"
 
 // CaddyModule returns the Caddy module information.
 func (Guard) CaddyModule() caddy.ModuleInfo {
@@ -47,13 +54,29 @@ func (Guard) CaddyModule() caddy.ModuleInfo {
 // Provisioning necessary parts
 func (g *Guard) Provision(ctx caddy.Context) error {
 	g.logger = ctx.Logger()
-	g.Client = &http.Client{}
+	g.client = ipqs.New()
 
-	return g.setup_client()
+	ipqs.EnableCaching = true
+
+	if g.Proxy != "" {
+		g.client.SetProxy(g.Proxy)
+	}
+
+	g.ctx = context.WithValue(context.Background(), ipqs.TTL_key, g.TTL)
+	return g.client.Provision()
 }
 
 // Guard handler
-func (g *Guard) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+func (g *Guard) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) (err error) {
+	g.logger.Info("[GUARD-SCAN-START]:",
+		zap.String("ip", fmt.Sprintf("%+v", g)),
+	)
+
+	defer next.ServeHTTP(w, r)
+
+	ctx, cancel := context.WithTimeout(g.ctx, g.Timeout)
+	defer cancel()
+
 	var lookupInHeader string
 
 	for _, header := range g.IPHeaders {
@@ -65,117 +88,42 @@ func (g *Guard) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp
 	}
 
 	if lookupInHeader == "" {
-		r.Header.Add("X-Guard-Success", "-1")
-		r.Header.Add("X-Guard-Info", "IP header not found")
-
-		return next.ServeHTTP(w,r)
+		r.Header.Set("X-Guard-Success", "-1")
+		r.Header.Set("X-Guard-Info", "IP header not found")
+		return 
 	} 
 
-	g.logger.Sugar().Infof("[GUARD-SCAN-START]: %s", lookupInHeader)
-	defer g.logger.Sugar().Infof("[GUARD-SCAN-END]: %s", lookupInHeader)
-
-	err := g.Rate(lookupInHeader)
-
-	r.Header.Add("X-Guard-Info", "Scanned IP for reputation using InternetDB")
-	r.Header.Add("X-Guard-Query", lookupInHeader)
-	
-	switch err {
-	case ErrBadIP:
-		if g.PassThrough {
-			r.Header.Add("X-Guard-Success", "1")
-			r.Header.Add("X-Guard-Rate", "DANGER")
-			
-			break // exit switch - to skip statements below
-		} 
-
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(403)
-		
-		w.Write([]byte(fmt.Sprintf(
-			"<h2>You seem to use a VPN/Proxy, please turn it off to proceed.</h2>",
-		)))
-
-		return ErrBadIP
-	case nil:
-		r.Header.Add("X-Guard-Success", "1")
-		r.Header.Add("X-Guard-Rate", "LEGIT")
-	default:
-		r.Header.Add("X-Guard-Success", "-1")
-		r.Header.Add("X-Guard-Rate", "UNKNOWN")
-
-		err, netErr := err.(net.Error); if netErr && err.Timeout() {
-			r.Header.Set("X-Guard-Info", "Client for InternetDB timed out")
-		}
-
-		if !netErr {
-			r.Header.Set("X-Guard-Info", err.Error())
-		}
-	}
-
-	return next.ServeHTTP(w,r)
-}
-
-
-func setup_headers(req *http.Request) {
-	req.Header.Add("Cache-Control", "must-revalidate")
-	req.Header.Add("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1")
-	req.Header.Add("Content-Type", "application/json")
-}
-
-func (g *Guard) setup_client() error {
-	g.Client.Timeout = g.Timeout
-
-	if g.Rotating_Proxy != "" {
-		proxyURI, err := url.Parse(g.Rotating_Proxy)
-		if err != nil {
-			g.logger.Error(err.Error())
-			return err
-		}
-
-		g.Client.Transport = &http.Transport{
-			Proxy: http.ProxyURL(proxyURI),
-		}
-	} 
-
-	return nil
-}
-
-func (g *Guard) Rate(ipaddr string) error {
-	var err error
-	
-	defer func(){
-		if err != nil {
-			g.logger.Error(err.Error())
-		}
-	}()
-
-	req, err :=  http.NewRequest(
-		http.MethodGet, 
-		InternetDB + ipaddr, 
-		nil,
+	g.logger.Info("[GUARD-SCAN-START]:",
+		zap.String("ip", lookupInHeader),
+	)
+	defer g.logger.Info("[GUARD-SCAN-END]:",
+		zap.String("ip", lookupInHeader),
 	)
 
+	err = g.client.GetIPQS(ctx, lookupInHeader, ua)
 	if err != nil {
-		return err
+		if err == ipqs.ErrBadIPRep {
+			write_report(danger, r)
+		}
+		
+		write_report(unknown, r)
+		return
 	}
 
-	setup_headers(req)
+	write_report(success, r)
+	return 
+}
 
-	res, err := g.Client.Do(req)
-	if err != nil {
-		return err
+func write_report(mode string, r *http.Request){
+	switch(mode){
+	case success:
+		r.Header.Set("X-Guard-Success", "1")
+		r.Header.Set("X-Guard-Rate", "LEGIT")
+	case danger:
+		r.Header.Set("X-Guard-Success", "1")
+		r.Header.Set("X-Guard-Rate", "DANGER")
+	default:
+		r.Header.Set("X-Guard-Success", "-1")
+		r.Header.Set("X-Guard-Rate", "UNKNOWN")
 	}
-
-	// have nothing to do with the body
-	if err = res.Body.Close(); err != nil {
-		return err
-	}
-
-	// means InternetDB contains info about the queried address
-	// so it has bad reputation according to the logic of Guard
-	if res.StatusCode != http.StatusNotFound {
-		return ErrBadIP
-	} 
-
-	return nil
 }
