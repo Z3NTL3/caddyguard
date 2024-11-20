@@ -33,13 +33,13 @@ xcaddy build --with github.com/z3ntl3/caddyguard
     # https://caddyserver.com/docs/caddyfile/directives#directive-order
 	guard /api* {
 		rotating_proxy 1.1.1.1 
-		timeout 3s 
+		timeout 200ms 
 		ip_headers cf-connecting-ip {
 			more1
 			more2
 			more3
 		}
-		pass_thru 
+		ttl 168h 
 	}
 
 	reverse_proxy  http://localhost:2000
@@ -58,7 +58,7 @@ guard [matcher] {
         <arg>
         ...
     }
-    pass_thru 
+    ttl 168
 }
 ```
 ### Sub-directives 
@@ -100,9 +100,23 @@ guard [matcher] {
      >
      > ```caddy
      >  guard /api* {
-     >     timeout 1s    
+     >     timeout 200ms    
      >  }
-     
+- ``ttl <arg> ``
+     > **Doc**
+     >
+     > Time to live for cache
+     >
+     > - Should comfort [time](https://pkg.go.dev/time#ParseDuration). 
+     > 
+     > Aka arg values like: ``10s``, ``1m`` etc...
+     >
+     > **Examples**
+     >
+     > ```caddy
+     >  guard /api* {
+     >     ttl 168h 
+     >  }
 - ``ip_headers <args...> {...}``
     > **Doc**
      > - Can be arbitrary values. Tells Guard plugin to find the real ip address in one of those headers.
@@ -117,14 +131,7 @@ guard [matcher] {
      >          header2
      >     }
      >  }
-- ``pass_thru``
-    > **Doc**
-    > <br>
-    > Accepts no args, and disallows opening a block. It acts like a turn on.
-    >
-    > Providing ``pass_thru`` simply means to pass data down to the next handler, aka your web server/reverse proxy instead of writing a builtin HTTP response. Provides useful data by manipulating the request headers, while it moves down to the next tree of handler(s).
-    > 
-    > **If** ``pass_thru`` is provided, then there are some important headers your web server should consume:
+-  Header manipulation for reports
     >
     > #### X-Guard-* Headers
     > - ``X-Guard-Success`` 
@@ -147,10 +154,22 @@ guard [matcher] {
 
 
 ### Additional notes
-Guard uses **InternetDB** to perform scans. It's completely free, and allows high traffic throughput. You can always use ``rotating_proxy`` sub-directive with Guard to allow a limitless quota when needed.
+Guard uses **InternetDB** to determine the reputation of an ip/host. It's completely free, and allows high traffic throughput. You can always use ``rotating_proxy`` sub-directive with Guard to allow a limitless quota when needed. 
 
-Determination of a bad IP happens based on logic:
- - If **InternetDB** has information regards the queried IoT device by IP, then consider it has a bad IP reputation.
+To be fast and not halter or negatively impact your avg response times while sitting as an intermediary between your backend, Guard is effectively using an in memory-cache.
+
+Here's the performanc ebenchmark for it below;
+```
+Running tool: /opt/homebrew/bin/go test -benchmem -run=^$ -bench ^BenchmarkClient$ github.com/SimpaiX-net/ipqs/tests
+
+goos: darwin
+goarch: arm64
+pkg: github.com/SimpaiX-net/ipqs/tests
+cpu: Apple M1
+BenchmarkClient-8   	 3177540	       434.4 ns/op	     560 B/op	       7 allocs/op
+PASS
+ok  	github.com/SimpaiX-net/ipqs/tests	2.688s
+```
 
 
 ### Credits

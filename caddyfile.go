@@ -39,7 +39,7 @@ func (g *Guard) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 		for nesting := d.Nesting(); d.NextBlock(nesting); {
 			switch d.Val() {
 			case "rotating_proxy":
-				if !d.AllArgs(&g.Rotating_Proxy) {
+				if !d.AllArgs(&g.Proxy) {
 					return d.Err("cannot provide more args to key 'rotating_proxy'")
 				}
 			case "timeout":
@@ -54,6 +54,18 @@ func (g *Guard) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 				}
 
 				g.Timeout = tD
+			case "ttl":
+				ttl := ""
+				if !d.AllArgs(&ttl) {
+					return d.Err("cannot provide more args to key 'ttl'")
+				}
+				
+				ttlD, err := time.ParseDuration(ttl)
+				if err != nil {
+					return d.Errf("err for 'ttl': %s", err.Error())
+				}
+
+				g.TTL = ttlD
 			case "ip_headers":
 				for d.NextArg() {
 					g.IPHeaders = append(g.IPHeaders, d.Val())
@@ -62,24 +74,20 @@ func (g *Guard) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 				for nest := d.Nesting(); d.NextBlock(nest); {
 					g.IPHeaders = append(g.IPHeaders, d.Val())
 				}
-			case "exclude":
-			case "pass_thru": 
-				g.PassThrough = true
 
-				if d.CountRemainingArgs() == 0 { continue }
-				
-				if d.CountRemainingArgs() > 0 {
-					return d.Err("do not provide more args to 'pass_thru'")
-				}
-
-				if !d.NextArg() {
-					return d.Err("cannot open block for 'pass_thru', it's standalone")
-				}
 			default:
 				return d.Err("unknown sub-directive(s) were provided")
 			}
 		}
 	}
+
+	if g.Timeout == 0 {
+		return d.Err("'timeout' sub-directive must be set")
+	}  
+
+	if g.TTL == 0 {
+		return d.Err("'ttl' sub-directive must be set")
+	}  
 
 	return nil
 }
