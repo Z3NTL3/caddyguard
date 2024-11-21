@@ -5,7 +5,7 @@ go 1.23.1
 toolchain go1.23.3
 
 require (
-	github.com/SimpaiX-net/ipqs v0.6.2
+	github.com/SimpaiX-net/ipqs v0.6.3
 	github.com/caddyserver/caddy/v2 v2.8.4
 	go.uber.org/zap v1.27.0
 )
