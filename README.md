@@ -157,17 +157,18 @@ Guard uses **InternetDB** to determine the reputation of an ip/host. It's comple
 
 To be fast and not halter or negatively impact your avg response times while sitting as an intermediary between your backend, Guard is effectively using an in memory-cache.
 
-Here's the performanc ebenchmark for it below;
+Here's the benchmark:
 ```
-Running tool: /opt/homebrew/bin/go test -benchmem -run=^$ -bench ^BenchmarkClient$ github.com/SimpaiX-net/ipqs/tests
+Running tool: C:\Program Files\Go\bin\go.exe test -benchmem -run=^$ -bench ^BenchmarkClient$ github.com/SimpaiX-net/ipqs/tests
 
-goos: darwin
-goarch: arm64
+goos: windows
+goarch: amd64
 pkg: github.com/SimpaiX-net/ipqs/tests
-cpu: Apple M1
-BenchmarkClient-8   	 3177540	       434.4 ns/op	     560 B/op	       7 allocs/op
+cpu: AMD Ryzen 7 4800H with Radeon Graphics         
+BenchmarkClient-16    	 8923340	       135.7 ns/op	     256 B/op	       4 allocs/op
 PASS
-ok  	github.com/SimpaiX-net/ipqs/tests	2.688s
+ok  	github.com/SimpaiX-net/ipqs/tests	2.911s
+
 ```
 
 
