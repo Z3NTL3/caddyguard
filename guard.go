@@ -22,13 +22,14 @@ var (
 	_ caddyfile.Unmarshaler = (*Guard)(nil)
 )
 
-type mode = string
-
 const (
-	success mode = "success"
-	danger mode = "danger"
-	unknown mode = "unknown"
+	success = "success"
+	danger 	= "danger"
+	unknown = "unknown"
 )
+
+const ua = "Mozilla/5.0 (Linux; Android 13; SM-S901U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36"
+
 // Guard is an elegant IPQS plugin for Caddy.
 type Guard struct { 
 	TTL time.Duration 	  	`json:"ttl,omitempty"`
@@ -40,7 +41,6 @@ type Guard struct {
 	client *ipqs.Client
 }
 
-const ua = "Mozilla/5.0 (Linux; Android 13; SM-S901U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36"
 
 // CaddyModule returns the Caddy module information.
 func (Guard) CaddyModule() caddy.ModuleInfo {
@@ -55,8 +55,7 @@ func (g *Guard) Provision(ctx caddy.Context) error {
 	ipqs.EnableCaching = true
 
 	g.logger = ctx.Logger()
-	g.client = ipqs.New().
-				SetProxy(g.Proxy)
+	g.client = ipqs.New().SetProxy(g.Proxy)
 
 	g.ctx = context.WithValue(context.Background(), ipqs.TTL_key, g.TTL)
 	return g.client.Provision()
@@ -93,28 +92,17 @@ func (g *Guard) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp
 
 	err = g.client.GetIPQS(ctx, lookupInHeader, ua)
 
+	r.Header.Set("X-Guard-Success", "1")
+
 	switch err {
 		case nil:
-			write_report(success, r)
-		case ipqs.ErrBadIPRep:
-			write_report(danger, r)
-		default:
-			write_report(unknown, r)
-	}
-
-	return 
-}
-
-func write_report(mode string, r *http.Request){
-	switch mode {
-		case success:
-			r.Header.Set("X-Guard-Success", "1")
 			r.Header.Set("X-Guard-Rate", "LEGIT")
-		case danger:
-			r.Header.Set("X-Guard-Success", "1")
+		case ipqs.ErrBadIPRep:
 			r.Header.Set("X-Guard-Rate", "DANGER")
 		default:
 			r.Header.Set("X-Guard-Success", "-1")
 			r.Header.Set("X-Guard-Rate", "UNKNOWN")
 	}
+
+	return 
 }
