@@ -20,6 +20,8 @@
 
 --- **Questions?** feel free to ask by [contacting me](https://t.me/z3ntl3)! 
 
+[Traefik version](https://github.com/SimpaiX-net/traefik-guard)
+
 ### Install
 ```
 xcaddy build --with github.com/z3ntl3/caddyguard
